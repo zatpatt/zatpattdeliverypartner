@@ -1,5 +1,5 @@
 // src/pages/LoginPage.jsx
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LanguageContext } from "../context/LanguageContext";
@@ -8,24 +8,41 @@ import HeaderImg from "../assets/Header/Header.png"; // same as your main app
 export default function LoginPage() {
   const navigate = useNavigate();
   const { lang, t, setLang } = useContext(LanguageContext);
-  const [mobile, setMobile] = useState("");
-  const [referral, setReferral] = useState("");
-  const [mobileError, setMobileError] = useState("");
-  const [referralError, setReferralError] = useState("");
+  const [loginInput, setLoginInput] = useState(""); // email or phone
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
-  const handleContinue = () => {
-    if (mobile.length !== 10 || mobileError || referralError) return; // prevent continue
+  const handleLogin = () => {
+    if (loginError || passwordError || password.length < 8) return;
 
     localStorage.setItem(
       "partnerProfile",
-      JSON.stringify({ mobile, referral })
+      JSON.stringify({ loginInput, password })
     );
 
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    localStorage.setItem("partnerOtp", otp);
-    alert(`OTP for login: ${otp}`);
-    navigate("/otp");
+    alert(`Logged in successfully as: ${loginInput}`);
+    navigate("/dashboard"); // redirect after login
   };
+
+  useEffect(() => {
+    const val = loginInput.trim();
+
+    // Check if email or 10-digit phone
+    if (val && !/^(\d{10}|[\w.-]+@[\w.-]+\.\w{2,})$/.test(val)) {
+      setLoginError("Enter a valid email or 10-digit phone number");
+    } else {
+      setLoginError("");
+    }
+  }, [loginInput]);
+
+  useEffect(() => {
+    if (password && password.length < 8) {
+      setPasswordError("Password must be minimum 8 characters");
+    } else {
+      setPasswordError("");
+    }
+  }, [password]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fff6ed] relative">
@@ -55,73 +72,60 @@ export default function LoginPage() {
         <div className="w-full max-w-md p-[2px] rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-400 shadow-lg">
           <div className="bg-white rounded-xl p-8 sm:p-10 text-center">
             <h1 className="text-2xl font-bold text-orange-500 mb-6">
-              {t("title")}
+              {t("Delivery Partner Login") }
             </h1>
 
             <div className="space-y-4">
-              {/* Mobile Input */}
-              <div className="flex gap-2">
-                <select className="border border-gray-300 rounded-xl px-2 py-2 bg-white text-sm">
-                  <option value="+91">🇮🇳 +91</option>
-                </select>
-                <input
-                  placeholder={t("mobile")}
-                  value={mobile}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, "").slice(0, 10);
-                    setMobile(val);
-
-                    // Live validation
-                    if (val.length > 0 && !/^\d{10}$/.test(val)) {
-                      setMobileError("Enter a valid 10-digit number");
-                    } else {
-                      setMobileError("");
-                    }
-                  }}
-                  className="flex-1 border border-orange-400 rounded-xl px-3 py-2 focus:ring-2 focus:ring-orange-400 outline-none"
-                />
-              </div>
-              {mobileError && <p className="text-red-500 text-sm mt-1">{mobileError}</p>}
-
-              {/* Referral Input */}
+              {/* Email or Phone Input */}
               <input
-                placeholder={t("referral")}
-                value={referral}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setReferral(val);
-
-                  // Optional live validation: only letters & numbers allowed
-                  if (val && !/^[A-Za-z0-9]*$/.test(val)) {
-                    setReferralError("Referral code can contain only letters & numbers");
-                  } else {
-                    setReferralError("");
-                  }
-                }}
+                placeholder={t("email or Phone")}
+                value={loginInput}
+                onChange={(e) => setLoginInput(e.target.value)}
                 className="w-full border border-orange-400 rounded-xl px-3 py-2 focus:ring-2 focus:ring-orange-400 outline-none"
               />
-              {referralError && <p className="text-red-500 text-sm mt-1">{referralError}</p>}
+              {loginError && <p className="text-red-500 text-sm mt-1">{loginError}</p>}
+
+              {/* Password Input */}
+              <input
+                type="password"
+                placeholder={t("password")}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border border-orange-400 rounded-xl px-3 py-2 focus:ring-2 focus:ring-orange-400 outline-none"
+              />
+              {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>}
             </div>
 
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={handleContinue}
-              disabled={mobile.length !== 10 || mobileError || referralError}
+              onClick={handleLogin}
+              disabled={!!loginError || !!passwordError || password.length < 8 || !loginInput}
               className={`w-full mt-6 text-white py-3 rounded-xl font-semibold ${
-                mobile.length === 10 && !mobileError && !referralError
+                !loginError && !passwordError && password.length >= 8 && loginInput
                   ? "bg-orange-500 hover:bg-orange-600"
                   : "bg-gray-400 cursor-not-allowed"
               }`}
             >
-              {t("continue")}
+              {t("Log In")}
             </motion.button>
+
+            <div className="mt-5 text-sm text-gray-600">
+              {t("Don't have an account?") || "Don't have an account?"} 
+              <span 
+                onClick={() => navigate("/signup")}
+                className="text-orange-500 font-semibold cursor-pointer"
+              >
+                {t(" sign up")}
+              </span>
+            </div>
+
           </div>
         </div>
       </main>
 
       {/* Footer */}
       <footer className="bg-orange-500 text-white text-center py-3 mt-auto text-sm">
-        © 2025 Delivery Partner App. All rights reserved.
+        © 2025 ZatPatt Delivery Partner
       </footer>
     </div>
   );

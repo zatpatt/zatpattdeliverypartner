@@ -1,58 +1,184 @@
 // src/pages/LeaderboardPage.jsx
 import React, { useState, useEffect } from "react";
-import PageHeader from "../components/PageHeader";
-import { Star } from "lucide-react";
+import { ArrowLeft, Star, Trophy } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function LeaderboardPage() {
-  const [leaders, setLeaders] = useState([]);
+  const navigate = useNavigate();
 
+  const [activeTab, setActiveTab] = useState("orders"); // "orders" | "ratings"
+  const [leaders, setLeaders] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // ---------------- LOAD LEADERBOARD DATA ----------------
   useEffect(() => {
-    const savedLeaders = JSON.parse(localStorage.getItem("leaderboard") || "[]");
-    if (savedLeaders.length) {
-      setLeaders(savedLeaders);
-    } else {
-      const mockLeaders = [
-        { id: 1, name: "Alice", completed: 45, earnings: 12000, rating: 4.9 },
-        { id: 2, name: "Bob", completed: 38, earnings: 9800, rating: 4.7 },
-        { id: 3, name: "Charlie", completed: 33, earnings: 8700, rating: 4.6 },
-        { id: 4, name: "David", completed: 29, earnings: 7800, rating: 4.5 },
-        { id: 5, name: "Eva", completed: 25, earnings: 6500, rating: 4.4 },
-      ];
-      setLeaders(mockLeaders);
-      localStorage.setItem("leaderboard", JSON.stringify(mockLeaders));
+    // Get delivery partners data
+    const savedOrders = JSON.parse(localStorage.getItem("partner_orders") || "[]");
+    const savedEarnings = JSON.parse(localStorage.getItem("partner_earnings") || "{}");
+
+    // Mock partner name
+    const partnerName = localStorage.getItem("partner_name") || "You";
+
+    // Count completed orders
+    const completedCount = savedOrders.filter(o => o.status === "Delivered").length;
+
+    // Rating
+    const rating = savedEarnings.rating || 0;
+
+    const current = {
+      id: 9999,
+      name: partnerName,
+      completed: completedCount,
+      rating: rating,
+    };
+
+    setCurrentUser(current);
+
+    // Mock leaderboard (other riders)
+    let mock = [];
+    for (let i = 1; i <= 150; i++) {
+      mock.push({
+        id: i,
+        name: "Rider " + i,
+        completed: Math.floor(Math.random() * 140),
+        rating: (Math.random() * (5 - 3.5) + 3.5).toFixed(1),
+      });
     }
+
+    // Add current user to list
+    mock.push(current);
+
+    setLeaders(mock);
   }, []);
+
+  // ---------------- SORT DATA ----------------
+  const sortedByOrders = [...leaders].sort((a, b) => b.completed - a.completed);
+  const sortedByRating = [...leaders].sort((a, b) => b.rating - a.rating);
+
+  const top100Orders = sortedByOrders.slice(0, 100);
+  const top100Ratings = sortedByRating.slice(0, 100);
+
+  // Find current user rank
+  const userOrdersRank =
+    sortedByOrders.findIndex((x) => x.id === 9999) + 1;
+
+  const userRatingsRank =
+    sortedByRating.findIndex((x) => x.id === 9999) + 1;
+
+  const renderRankMedal = (rank) => {
+    if (rank === 1)
+      return <Trophy className="text-yellow-400 w-5 h-5" />;
+    if (rank === 2)
+      return <Trophy className="text-gray-400 w-5 h-5" />;
+    if (rank === 3)
+      return <Trophy className="text-orange-600 w-5 h-5" />;
+    return rank;
+  };
+
+  const renderRow = (leader, index, type) => (
+    <tr key={leader.id} className={index % 2 === 0 ? "bg-orange-50" : "bg-white"}>
+      <td className="p-3 font-semibold text-center">
+        {renderRankMedal(index + 1)}
+      </td>
+      <td className="p-3">{leader.name}</td>
+
+      {type === "orders" ? (
+        <td className="p-3 text-center">{leader.completed}</td>
+      ) : (
+        <td className="p-3 text-center flex items-center gap-1 justify-center">
+          {leader.rating} <Star className="text-yellow-400 w-4 h-4" />
+        </td>
+      )}
+    </tr>
+  );
 
   return (
     <div className="min-h-screen bg-orange-50 flex flex-col">
-      <PageHeader title="Leaderboard" />
+      {/* HEADER */}
+      <header className="bg-orange-500 text-white py-4 px-6 shadow-lg relative text-center">
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute left-4 bg-white text-orange-500 p-2 rounded-full shadow"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <h1 className="text-xl font-bold">Leaderboard</h1>
+      </header>
+
+      {/* TABS */}
+      <div className="flex justify-center mt-4">
+        <button
+          className={`px-4 py-2 rounded-l-xl font-semibold ${
+            activeTab === "orders"
+              ? "bg-orange-500 text-white"
+              : "bg-white text-gray-600"
+          }`}
+          onClick={() => setActiveTab("orders")}
+        >
+          Completed Orders
+        </button>
+        <button
+          className={`px-4 py-2 rounded-r-xl font-semibold ${
+            activeTab === "ratings"
+              ? "bg-orange-500 text-white"
+              : "bg-white text-gray-600"
+          }`}
+          onClick={() => setActiveTab("ratings")}
+        >
+          Ratings
+        </button>
+      </div>
+
+      {/* TABLE */}
       <div className="p-6 max-w-4xl mx-auto w-full space-y-4">
         <div className="bg-white rounded-2xl shadow overflow-hidden">
           <table className="w-full text-left">
             <thead className="bg-orange-400 text-white">
               <tr>
-                <th className="p-3">Rank</th>
+                <th className="p-3 text-center">Rank</th>
                 <th className="p-3">Name</th>
-                <th className="p-3">Completed Orders</th>
-                <th className="p-3">Earnings (₹)</th>
-                <th className="p-3">Rating</th>
+
+                {activeTab === "orders" ? (
+                  <th className="p-3 text-center">Completed Orders</th>
+                ) : (
+                  <th className="p-3 text-center">Rating</th>
+                )}
               </tr>
             </thead>
+
             <tbody>
-              {leaders.map((leader, index) => (
-                <tr key={leader.id} className={index % 2 === 0 ? "bg-orange-50" : "bg-white"}>
-                  <td className="p-3 font-semibold">{index + 1}</td>
-                  <td className="p-3">{leader.name}</td>
-                  <td className="p-3">{leader.completed}</td>
-                  <td className="p-3">{leader.earnings}</td>
-                  <td className="p-3 flex items-center gap-1">
-                    {leader.rating} <Star className="w-4 h-4 text-yellow-400" />
-                  </td>
-                </tr>
-              ))}
+              {(activeTab === "orders" ? top100Orders : top100Ratings).map(
+                (leader, index) =>
+                  renderRow(leader, index, activeTab)
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* USER RANK BELOW TOP 100 */}
+        {(activeTab === "orders"
+          ? userOrdersRank > 100
+          : userRatingsRank > 100) && (
+          <div className="bg-white p-4 rounded-2xl shadow">
+            <h2 className="font-bold text-lg mb-2">Your Rank</h2>
+
+            <div className="flex justify-between text-sm">
+              <span>Rank</span>
+              <span className="font-bold">
+                {activeTab === "orders" ? userOrdersRank : userRatingsRank}
+              </span>
+            </div>
+
+            <div className="flex justify-between text-sm mt-1">
+              <span>{currentUser?.name}</span>
+              <span className="font-bold">
+                {activeTab === "orders"
+                  ? currentUser?.completed
+                  : currentUser?.rating}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

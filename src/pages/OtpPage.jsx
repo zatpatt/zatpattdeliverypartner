@@ -1,37 +1,40 @@
-// src/pages/OtpPage.jsx
-import React, { useState, useContext, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LanguageContext } from "../context/LanguageContext";
 
 export default function OtpPage() {
   const navigate = useNavigate();
-  const { t } = useContext(LanguageContext);
+  const location = useLocation();
+
+  const email = location.state?.email;
+  const mobile = location.state?.mobile;
+
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
-  const [timer, setTimer] = useState(30); // 30s countdown
+  const [timer, setTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
 
-  // Get mobile number from localStorage
-  const storedProfile = JSON.parse(localStorage.getItem("partnerProfile") || "{}");
-  const mobileNumber = storedProfile.mobile || "";
+  const signupData = JSON.parse(localStorage.getItem("pendingSignupUser") || "{}");
 
-  // Countdown timer
   useEffect(() => {
-    if (timer > 0) {
-      const interval = setInterval(() => {
-        setTimer(prev => prev - 1);
-      }, 1000);
-      return () => clearInterval(interval);
-    } else {
+    if (timer <= 0) {
       setCanResend(true);
+      return;
     }
+    const id = setInterval(() => setTimer((t) => t - 1), 1000);
+    return () => clearInterval(id);
   }, [timer]);
 
   const handleVerify = () => {
-    const storedOtp = localStorage.getItem("partnerOtp");
+    const storedOtp = localStorage.getItem("signup_email_otp");
+
     if (otp === storedOtp) {
-      localStorage.setItem("partnerAuth", "true");
+      localStorage.setItem("userProfile", JSON.stringify(signupData));
+      localStorage.setItem("authToken", "true");
+
+      localStorage.removeItem("pendingSignupUser");
+      localStorage.removeItem("signup_email_otp");
+
       navigate("/dashboard");
     } else {
       setError("Invalid OTP");
@@ -39,63 +42,66 @@ export default function OtpPage() {
   };
 
   const handleResend = () => {
-    const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
-    localStorage.setItem("partnerOtp", newOtp);
-    alert(`OTP resent: ${newOtp}`); // Replace with actual API in production
-    setOtp("");
-    setError("");
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    localStorage.setItem("signup_email_otp", newOtp);
+
+    alert("New OTP (testing): " + newOtp);
+
     setTimer(30);
     setCanResend(false);
+    setOtp("");
   };
 
+  if (!email) {
+    return (
+      <div className="text-center mt-20 text-red-500">
+        Invalid Access — No email provided
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#fff6ed] flex flex-col justify-center items-center px-6">
+    <div className="min-h-screen bg-[#fff6ed] flex justify-center items-center px-6">
       <div className="w-full max-w-sm p-[2px] rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-400 shadow-lg">
+
         <motion.div className="bg-white rounded-xl p-8 text-center">
-          
-          {/* New Text */}
-          <p className="text-gray-700 text-base mb-2">
-            We have sent a verification code to
-          </p>
-          <p className="text-black font-semibold text-lg mb-4">
-            +91 {mobileNumber}
-          </p>
+          <p className="text-gray-700 mb-2">Verification code sent to:</p>
+          <p className="text-black font-semibold text-lg mb-4">{email}</p>
 
           <input
             value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
-            placeholder="0000"
-            className="w-full border border-orange-400 rounded-xl px-3 py-2 text-center focus:ring-2 focus:ring-orange-400 outline-none"
+            onChange={(e) =>
+              setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+            }
+            placeholder="Enter 6-digit OTP"
+            className="w-full border border-orange-400 rounded-xl px-3 py-2 text-center"
           />
+
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleVerify}
-            className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-semibold"
+            className="w-full mt-4 bg-orange-500 text-white py-3 rounded-xl"
           >
             Verify OTP
           </motion.button>
 
-          {/* Resend Timer / Button */}
           <div className="mt-3 text-sm text-gray-600">
             {canResend ? (
-              <button
-                onClick={handleResend}
-                className="text-orange-500 font-semibold hover:underline"
-              >
+              <button onClick={handleResend} className="text-orange-500">
                 Resend OTP
               </button>
             ) : (
-              <span>Resend SMS in {timer}s</span>
+              <span>Resend OTP in {timer}s</span>
             )}
           </div>
 
           <button
-            onClick={() => navigate("/")}
-            className="mt-3 text-orange-500 hover:underline"
+            onClick={() => navigate("/signup")}
+            className="mt-3 text-orange-500 underline text-sm"
           >
-            Change Number
+            Change Email
           </button>
         </motion.div>
       </div>

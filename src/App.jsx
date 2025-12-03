@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "./context/LanguageContext";
 
 import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import OtpPage from "./pages/OtpPage";
 import DashboardPage from "./pages/DashboardPage";
 import OrdersPage from "./pages/OrdersPage";
@@ -19,6 +20,7 @@ export default function App() {
         {/* Auth */}
         <Route path="/" element={<LoginPage />} />
         <Route path="/otp" element={<OtpPage />} />
+        <Route path="/signup" element={<SignupPage />} />
 
         {/* Main App */}
         <Route path="/dashboard" element={<DashboardPage />} />
