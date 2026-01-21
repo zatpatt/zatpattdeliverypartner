@@ -25,11 +25,7 @@ export default function TrainingVideoPage() {
       localStorage.getItem("training_progress") || 0
     );
 
-    // ❌ Not verified
-    if (verified !== "verified") {
-      navigate("/verification-pending", { replace: true });
-      return;
-    }
+    
 
     // ❌ Training already completed
     if (completed === "true") {

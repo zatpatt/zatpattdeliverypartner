@@ -18,10 +18,7 @@ export default function TrainingCoursePage() {
     const verification = localStorage.getItem("verification_status");
     const trainingCompleted = localStorage.getItem("training_completed");
 
-    if (verification !== "verified") {
-      navigate("/verification-pending", { replace: true });
-      return;
-    }
+   
 
     if (trainingCompleted === "true") {
       navigate("/dashboard", { replace: true });

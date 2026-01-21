@@ -9,12 +9,7 @@ export default function TrainingLoadingPage() {
 
     const verification = localStorage.getItem("verification_status");
     const trainingCompleted = localStorage.getItem("training_completed");
-
-    // ❌ Not verified → go back
-    if (verification !== "verified") {
-      navigate("/verification-pending", { replace: true });
-      return;
-    }
+    
 
     // ❌ Training already done → skip loading
     if (trainingCompleted === "true") {

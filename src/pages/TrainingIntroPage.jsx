@@ -18,10 +18,7 @@ export default function TrainingIntroPage() {
     const verification =
       localStorage.getItem("verification_status");
 
-    if (verification !== "verified") {
-      navigate("/verification-pending", { replace: true });
-      return;
-    }
+   
 
     // 🔒 Lock onboarding permanently
     localStorage.setItem("onboarding_locked", "true");

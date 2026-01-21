@@ -11,9 +11,7 @@ export default function TrainingCompletedPage() {
     const trainingDone = localStorage.getItem("training_completed");
 
     // ❌ If training not completed, block access
-    if (trainingDone !== "true") {
-      navigate("/training", { replace: true });
-    }
+   
   }, [navigate]);
 
   /* 🎉 CONFETTI TIMER */
